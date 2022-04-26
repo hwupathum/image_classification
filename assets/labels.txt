@@ -1,0 +1,7 @@
+0 fifty
+1 fivehundred
+2 fivethousand
+3 hundred
+4 thousand
+5 twenty
+ 
