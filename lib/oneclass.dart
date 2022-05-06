@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:image/image.dart';
 import 'package:collection/collection.dart';
@@ -7,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
 
-abstract class AutoEncoder {
+abstract class OneClass {
   late Interpreter _interpreter;
   late InterpreterOptions _interpreterOptions;
 
@@ -26,7 +25,7 @@ abstract class AutoEncoder {
 
   String get modelName;
 
-  AutoEncoder({int? numThreads}) {
+  OneClass({int? numThreads}) {
     _interpreterOptions = InterpreterOptions();
 
     if (numThreads != null) {
@@ -59,9 +58,7 @@ abstract class AutoEncoder {
   TensorImage _preProcess(TensorImage inputImage) {
     int cropSize = min(inputImage.height, inputImage.width);
     return ImageProcessorBuilder()
-        .add(ResizeWithCropOrPadOp(cropSize, cropSize))
-        .add(ResizeOp(32, 32, ResizeMethod.BILINEAR))
-        .add(QuantizeOp(0, 255.0))
+        .add(ResizeOp(224, 224, ResizeMethod.BILINEAR))
         .build()
         .process(inputImage);
   }
@@ -75,25 +72,15 @@ abstract class AutoEncoder {
 
     _interpreter.run(_tensorImage.buffer, _outputBuffer.getBuffer());
 
-    List inputList = _tensorImage.buffer.asFloat32List();
     List<double> outputList = _outputBuffer.getDoubleList();
 
     print("Image Predicted");
-
-    double squareSum = 0;
-    if(inputList.length == outputList.length) {
-      for(int i = 0; i < inputList.length; i++) {
-        squareSum += pow(inputList[i] - outputList[i], 2);
-      }
-      double mse = squareSum / inputList.length;
-
-      print(mse);
-
-      if (mse >= 0.1) {
-        print("not a cash");
-        return false;
-      }
+    print(outputList);
+    if(outputList[0] > outputList[1]) {
+      print("not cash");
+      return false;
     }
+    print("cash");
     return true;
   }
 

@@ -10,8 +10,8 @@ import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:vibration/vibration.dart';
 
-import 'AutoEncoder.dart';
-import 'classifier_autoencoder.dart';
+import 'oneclass.dart';
+import 'oneclass_vgg.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({Key? key, this.title}) : super(key: key);
@@ -24,7 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Classifier _classifier;
-  late AutoEncoder _autoencoder;
+  late OneClass _oneClass;
 
   final FlutterTts flutterTts = FlutterTts();
 
@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
    
     super.initState();
     _classifier = ClassifierQuant();
-    _autoencoder = ClassifierAutoencoder();
+    _oneClass = OneClassVgg();
     _controller = PageController(
       initialPage: 0,
     );
@@ -76,66 +76,30 @@ class _HomeScreenState extends State<HomeScreen> {
     print("pressed predict");
     img.Image imageInput = img.decodeImage(_image!.readAsBytesSync())!;
 
-    bool cashPredict = _autoencoder.predict(imageInput);
+    bool cashPredict = _oneClass.predict(imageInput);
 
     if (!cashPredict) {
-      return _speakValue("");
+      _speakValue("");
+      return;
+    } else {
+      _speakValue("cash");
     }
-    var pred = _classifier.predict(imageInput);
-
-    setState(() {
-      this.category = pred;
-    });
-    reslutList.add(category!.label.split(" ")[1]);
-    result = category!.label.split(" ")[1];
-    print(result);
-    print(category!.score.toStringAsFixed(3));
-    _speakValue(result);
   }
 
 
     _speakValue(String value) async {
-      if (value == "twenty") {
-         if (await Vibration.hasVibrator()) {
+      if (value == "cash") {
+        if (await Vibration.hasVibrator()) {
           Vibration.vibrate(pattern: [100, 1000], intensities: [1, 255]);
         }
         await flutterTts.speak(
-            "Twenty rupees");
-      } else if (value == "fifty") {
+            "Currency Note detected");
+      } else {
         if (await Vibration.hasVibrator()) {
-          Vibration.vibrate(pattern: [100, 1000, 100, 1000], intensities: [1, 255]);
+          Vibration.vibrate(pattern: [100, 100], intensities: [1, 255]);
         }
-        await flutterTts.speak("Fifty rupees");
-      } else if (value == "hundred") {
-        if (await Vibration.hasVibrator()) {
-          Vibration.vibrate(pattern: [100, 1000, 100, 1000,100, 1000], intensities: [1, 255]);
-        }
-        await flutterTts.speak("Hundred rupees");
+        await flutterTts.speak("can't identify the currency note. please try again");
       }
-     else if (value == "fivehundred") {
-        if (await Vibration.hasVibrator()) {
-          Vibration.vibrate(pattern: [100, 1000, 100, 1000,100, 1000,100, 1000], intensities: [1, 255]);
-        }
-        await flutterTts.speak("fivehundred rupees");
-      }else if (value == "thousand") {
-        if (await Vibration.hasVibrator()) {
-          Vibration.vibrate(pattern: [100, 1000, 100, 1000,100, 1000,100, 1000,100,1000], intensities: [1, 255]);
-        }
-        await flutterTts.speak("thousand rupees");
-      }
-      else if (value == "fivethousand") {
-        if (await Vibration.hasVibrator()) {
-          Vibration.vibrate(pattern: [100, 1000, 100, 1000,100, 1000,100, 1000,100,1000,100,1000], intensities: [1, 255]);
-        }
-        await flutterTts.speak("fivethousand rupees");
-      }
-      else {
-        if (await Vibration.hasVibrator()) {
-          Vibration.vibrate(pattern: [100], intensities: [1, 255]);
-        }
-        await flutterTts.speak("cannot identify the value. please try again");
-      }
-
     }
 
   @override
